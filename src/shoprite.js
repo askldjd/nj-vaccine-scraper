@@ -38,17 +38,17 @@ async function scrapeZip(browser, zipCode) {
  */
 async function scrape() {
   const browser = await chromium.launch();
-  let result = [];
-  try {
-    result = await Promise.all(ZIP_CODES.map(zipCode => scrapeZip(browser, zipCode)));
-  } catch (e) {
-    console.warn("Error", e);
-  }
-  finally {
-    await browser.close();
+  let results = [];
+  for (const zipCode of ZIP_CODES) {
+    try {
+      results.push(await scrapeZip(browser, zipCode));
+    } catch (e) {
+      console.warn("Error", e);
+    }
   }
 
-  return result;
+  await browser.close();
+  return results;
 }
 
 module.exports = scrape;
