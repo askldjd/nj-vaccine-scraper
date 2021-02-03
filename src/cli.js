@@ -1,8 +1,9 @@
 const essex = require('./essex-county');
+const shoprite = require('./shoprite');
 
 allScrapers = {
   essex,
-  shoprite: async function () { console.error('ShopRite Not implemented'); return []; },
+  shoprite,
   hackensackMeridian: async function () { console.error('Hackensack-Meridian Not implemented'); return []; },
   vaccinatenj: async function () { console.error('VaccinateNJ Not implemented'); return []; },
 };
