@@ -1,0 +1,175 @@
+<style>
+  body {
+    font-family: helvetica, arial, sans-serif;
+    font-size: 12px;
+  }
+
+  table {
+    border-collapse: collapse;
+  }
+
+  th, td {
+    padding: 0.4em 0.5em;
+    border: 1px solid #999;
+  }
+
+  th {
+    background: #eee;
+  }
+
+  .availability.availability-no {
+    background: red;
+  }
+
+  .availability.availability-yes {
+    background: green;
+  }
+</style>
+
+<table id="main-grid" class="waffle" cellspacing="0" cellpadding="0">
+
+</table>
+
+<script type="text/javascript">
+  const UPDATE_INTERVAL = 60 * 1000;
+  const DATA_URL = './data.json'
+
+  function build (name, attributes, children) {
+    const element = document.createElement(name);
+    if (Array.isArray(attributes) && !children) {
+      [attributes, children] = [children, attributes];
+    }
+    if (attributes) {
+      for (let key in attributes) {
+        if (key === 'className') {
+          element[key] = attributes[key]
+        }
+        else {
+          element.setAttribute(key, attributes[key]);
+        }
+      }
+    }
+    if (children) {
+      for (let child of children) {
+        if (child == null) continue;
+        if (typeof child === 'string') {
+          child = document.createTextNode(child);
+        }
+        element.appendChild(child);
+      }
+    }
+    return element;
+  }
+
+  async function update () {
+    const response = await fetch(DATA_URL);
+    const data = await response.json();
+    const sortValues = {
+      'yes': 0,
+      'unknown': 1,
+      'unknowable': 1,
+      'no': 2
+    }
+    data.sort((a, b) => sortValues[a.available] - sortValues[b.available]);
+    render(data);
+    setTimeout(update, UPDATE_INTERVAL);
+  }
+
+  function render (data) {
+    const table = document.querySelector('#main-grid');
+    const children = renderTableContent(data);
+    table.innerHTML = '';
+    for (let child of children) {
+      table.appendChild(child);
+    }
+  }
+
+  function renderTableContent (data) {
+    return [renderHeaders(), build('tbody', data.map(renderRecord))];
+  }
+
+  function renderHeaders () {
+    return build('thead', [
+      build('tr', [
+        build('th', ['Available?']),
+        build('th', ['Last Check']),
+        build('th', ['Facility Name']),
+        build('th', ['Facility Address']),
+        build('th', ['County']),
+        build('th', ['Minimum Age']),
+        build('th', ['Phone']),
+        build('th', ['Website']),
+        build('th', ['Description'])
+      ])
+    ]);
+  }
+
+  function renderRecord (data) {
+    const availableText = {
+      'yes': 'Yes',
+      'no': 'No'
+    }[data.available] || '?'
+
+    let updateText = '-';
+    if (data.checked_at) {
+      const time = new Date(data.checked_at);
+      const minutes = (Date.now() - time) / 1000 / 60;
+      const hours = minutes / 60;
+      const days = hours / 24;
+      if (minutes < 60) {
+        updateText = `${Math.round(minutes)} minutes ago`;
+      }
+      else if (hours < 24) {
+        updateText = `${Math.round(hours * 10) / 10} hours ago`;
+      }
+      else {
+        updateText = `${Math.round(days * 10) / 10} days ago`;
+      }
+    }
+
+    let descriptionNodes;
+    if (data.description) {
+      const description = build('template');
+      description.innerHTML = data.description;
+      Array.from(description.querySelectorAll('script')).forEach(n => n.remove());
+      Array.from(description.querySelectorAll('style')).forEach(n => n.remove());
+      descriptionNodes = description.content;
+    }
+
+    return build('tr', [
+      build('td', {className: `availability availability-${data.available}`}, [
+        availableText
+      ]),
+      build('td', {className: `column-last-update`}, [
+        updateText
+      ]),
+      build('td', {className: `column-name`}, [
+        data.official ? data.official['Facility Name'] : data.name
+      ]),
+      build('td', {className: `column-address`}, [
+        data.official && data.official['Facility Address']
+      ]),
+      build('td', {className: `column-county`}, [
+        data.official && data.official['County']
+      ]),
+      build('td', {className: `column-age`}, [
+        data.official && data.official['Minimum Age']
+      ]),
+      build('td', {className: `column-phone`}, [
+        data.official && data.official['Phone Number for Appointments + Questions']
+      ]),
+      build('td', {className: `column-url`}, [
+        data.official && data.official['Facility Website']
+          ? build('a', {href: data.official['Facility Website']}, [data.official['Facility Website']])
+          : ''
+      ]),
+      build(
+        'td',
+        {className: `column-description`},
+        [descriptionNodes]
+      )
+    ]);
+  }
+
+  update();
+</script>
