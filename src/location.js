@@ -1,3 +1,6 @@
+// Example for https://covid19.nj.gov/pages/alt-vaccine-locator-map to create/update location
+// API KEY generated and needs to be added to dev/production environment
+
 var axios = require('axios');
 var qs = require('qs');
 var data = qs.stringify({
