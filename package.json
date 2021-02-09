@@ -9,7 +9,6 @@
   "author": "U.S. Digital Response",
   "license": "BSD-3-Clause",
   "dependencies": {
-    "axios": "^0.21.1",
     "csv-parse": "^4.15.1",
     "got": "^11.8.1",
     "playwright": "^1.8.0",

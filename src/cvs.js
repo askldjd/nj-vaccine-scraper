@@ -1,6 +1,6 @@
 // NOTE: This is a prototype to scrape CVS CVD appointment system. It is not
 // production ready.
-const axios = require('axios');
+const got = require('got');
 
 // const njClinics = [
 //   00003, 00125, 00129, 00203, 00208, 00228, 00243, 00251, 00271, 00289, 00298, 00320, 00336, 00340, 00356, 00360, 00362, 00381, 00385, 00398, 00429, 00431, 00432, 00435, 00448, 00456, 00462, 00463, 00464, 00465, 00472, 00477, 00478, 00479, 00481, 00506, 00514, 00519, 00548, 00596, 00617, 00638, 00648, 00655, 00661, 00667, 00668, 00687, 00688, 00695, 00715, 00716, 00749, 00752, 00759, 00761, 00764, 00790, 00808, 00809, 00814, 00815, 00817, 00824, 00825, 00836, 00837, 00849, 00853, 00855, 00862, 00864, 00867, 00905, 00936, 00955, 00961, 00965, 00975, 00991, 01033, 01059, 01061, 01062, 01069, 01072, 01088, 01124, 01146, 01158, 01165, 01167, 01195, 01214, 01220, 01224, 01240, 01243, 01269, 01272, 01275, 01279, 01287, 01526, 01780, 01782, 01927, 01928, 01929, 01946, 01956, 01967, 02001, 02014, 02015, 02017, 02023, 02024, 02026, 02031, 02051, 02064, 02079, 02090, 02092, 02093, 02094, 02117, 02122, 02126, 02130, 02139, 02163, 02196, 02199, 02203, 02207, 02209, 02231, 02235, 02261, 02264, 02265, 02284, 02300, 02301, 02302, 02319, 02320, 02354, 02369, 02390, 02409, 02416, 02456, 02462, 02464, 02480, 02492, 02508, 02511, 02535, 02547, 02576, 02577, 02683, 02684, 02723, 02724, 02742, 02746, 02753, 02762, 02795, 02796, 02813, 02815, 02816, 02820, 02835, 02837, 02853, 02854, 02868, 02870, 02949, 02950, 02957, 02967, 02968, 02970, 02987, 03031, 03097, 03136, 03161, 03194, 03596, 03618, 03759, 03972, 04047, 04125, 04131, 04163, 04259, 04443, 04615, 04626, 04644, 04685, 04771, 04841, 05128, 05193, 05300, 05427, 05461, 05491, 05675, 05767, 05771, 05820, 05831, 05855, 05871, 05967, 05980, 05984, 06032, 06034, 06035, 06036, 06038, 06039, 06060, 06061, 06063, 06064, 06065, 06067, 06070, 06071, 06073, 06074, 06075, 06076, 06170, 06344, 06544, 06760, 06872, 06873, 06877, 06900, 06947, 07069, 07096, 07105, 07160, 07171, 07182, 07190, 07238, 07400, 07613, 07842, 07915, 07961, 08924, 08939, 08951, 10001, 10031, 10046, 10047, 10062, 10087, 10091, 10211, 10237, 10289, 10322, 10363, 10379, 10381, 10458, 10552, 10608, 10611, 10655, 10766, 10853, 11010, 11012, 11088, 11135, 11163, 11203, 11204, 11271, 16440, 16463, 16464, 16482, 16496, 16497, 16513, 16514, 16515, 16516, 16517, 16520, 16533, 16542, 16550, 16579, 16610, 16658, 16671, 16684, 16704, 16717, 16728, 16796, 16799, 16823, 16943, 16944, 16984, 16985, 17006, 17035, 17047, 17190, 17224, 17250, 17261, 17322, 17331, 17444, 17447, 17455, 17501, 17667, 17690, 17734, 17738, 48303, 48304
@@ -51,13 +51,13 @@ async function queryClinic(address) {
   const cvsResults = [];
   const opt = {
     url: 'https://www.cvs.com/Services/ICEAGPV1/immunization/1.0.0/getIMZStores',
-    method: 'post',
+    method: 'POST',
     headers: {
       Origin: 'https://www.cvs.com',
       Referer: 'https://www.cvs.com/vaccine/intake/store/cvd-store-select/first-dose-select',
       TE: 'Trailers'
     },
-    data: {
+    json: {
       requestMetaData: {
         appName: 'CVS_WEB',
         lineOfBusiness: 'RETAIL',
@@ -77,12 +77,13 @@ async function queryClinic(address) {
       },
     },
   };
+
   try {
-    const response = await axios(opt);
-    if (response.data.responseMetaData.statusCode !== '1010') {
+    const response = await got(opt).json();
+    if (response.responseMetaData.statusCode !== '1010') {
       console.log(`found results at ${address}`);
-      console.log(JSON.stringify(response.data, null, 2));
-      cvsResults.push(response.data);
+      console.log(JSON.stringify(response, null, 2));
+      cvsResults.push(response);
     } else {
       console.log('nothing found at', address);
     }
@@ -117,8 +118,8 @@ function convertToStandardSchema(cvsResults) {
         offical: {
           'Facility Name': 'CVS',
           'Facility Address': `${location.addressLine}, ${location.addressCityDescriptionText}, ${location.addressState} ${location.addressZipCode}`,
-          'County': '???',
-          'Minimum Age': '???',
+          'County': '???', // TODO, need to inject the zip->county mapping database here
+          'Minimum Age': '???', // TODO, figure out how to get the minimum age requrement.
           'Phone Number for Appointments + Questions': location.pharmacyPhonenumber,
           'Facility Website': 'https://www.cvs.com/immunizations/covid-19-vaccine',
           'simpleName': 'CVS',
@@ -151,8 +152,8 @@ async function run() {
   // NJ isn't available yet for CVS CVD appointment
   // let clinics = njClinics;
 
-  // let clinics = ctClinics;
-  let clinics = arClinics;
+  let clinics = ctClinics;
+  // let clinics = arClinics;
   let allResults = [];
 
   for (let i = 0; i < clinics.length; i += 1) {
