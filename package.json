@@ -4,7 +4,7 @@
   "description": "Scrape vaccine availability information from clinics in New Jersey.",
   "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "NODE_ENV=test jest"
   },
   "author": "U.S. Digital Response",
   "license": "BSD-3-Clause",
@@ -13,5 +13,8 @@
     "got": "^11.8.1",
     "playwright": "^1.8.0",
     "yargs": "^16.2.0"
+  },
+  "devDependencies": {
+    "jest": "^26.6.3"
   }
 }
